@@ -1,0 +1,194 @@
+<title>ALD 약점 재도전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: single study column, sticky score bar on top, tap-to-answer cards grouped by topic */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --fg:#1b2428; --muted:#5d6b72; --line:#d5dde0;
+  --accent:#1f6f78; --accent-soft:#e1eff0;
+  --ok:#237a45; --ok-soft:#e3f3e8; --bad:#b23a3a; --bad-soft:#f8e4e4;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181b; --surface:#1a2226; --fg:#e4ebed; --muted:#93a3a9; --line:#2c383d;
+  --accent:#5fb7bf; --accent-soft:#1d3336; --ok:#6cc68d; --ok-soft:#1b3125; --bad:#ef8a8a; --bad-soft:#3a2224; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181b; --surface:#1a2226; --fg:#e4ebed; --muted:#93a3a9; --line:#2c383d;
+  --accent:#5fb7bf; --accent-soft:#1d3336; --ok:#6cc68d; --ok-soft:#1b3125; --bad:#ef8a8a; --bad-soft:#3a2224; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px}
+.bar-in{max-width:720px;margin:0 auto;padding-inline:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar h1{font-size:16px;margin:0;font-weight:700}
+.score{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;color:var(--muted);margin-left:auto}
+.prog{flex-basis:100%;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.intro{color:var(--muted);font-size:14px;margin:14px 0 4px}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:28px 0 8px;font-weight:700}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px}
+.q .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.q p.stem{margin:2px 0 10px;font-weight:500}
+.opts{display:grid;gap:6px}
+.opts.tf{grid-template-columns:1fr 1fr}
+button.o{font:inherit;text-align:left;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;min-height:44px}
+button.o:hover:not(:disabled){border-color:var(--accent)}
+button.o:focus-visible,button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.o:disabled{cursor:default}
+button.o.right{background:var(--ok-soft);border-color:var(--ok);color:var(--fg)}
+button.o.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--fg)}
+.tf button.o{text-align:center;font-weight:700}
+.exp{margin-top:10px;font-size:14px;padding:8px 10px;border-radius:6px;background:var(--accent-soft)}
+.exp b.ok{color:var(--ok)} .exp b.bad{color:var(--bad)}
+.model{white-space:pre-wrap;font-size:13.5px;background:var(--bg);border:1px dashed var(--line);border-radius:6px;padding:10px;margin-top:8px;overflow-x:auto}
+button.act{font:inherit;font-weight:700;padding:10px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer;min-height:44px}
+button.act.ghost{background:transparent;color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#result{background:var(--surface);border:2px solid var(--accent);border-radius:8px;padding:16px;margin-top:28px}
+#result h3{margin:0 0 8px;font-size:18px}
+.topics{display:grid;gap:6px;margin:10px 0}
+.t{display:grid;grid-template-columns:7.5em 1fr 3.5em;gap:8px;align-items:center;font-size:14px}
+.t .track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.t .track i{display:block;height:100%;background:var(--accent)}
+.t .v{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:12.5px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px}
+.note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.prog i{transition:none}}
+</style>
+
+<header class="bar"><div class="bar-in">
+  <h1>건축과경관디자인 · 약점 재도전</h1>
+  <span class="score" id="score">0 / 0 맞음 · 0문항 남음</span>
+  <div class="prog"><i id="progbar"></i></div>
+</div></header>
+
+<div class="wrap">
+  <p class="intro">보기를 누르면 바로 채점되고 해설이 나옵니다. 2차에서 틀린 부분만 모양을 바꿔 다시 냈습니다. 다 풀면 맨 아래 결과를 복사해서 Claude에게 보내 주세요.</p>
+  <div id="quiz"></div>
+  <section id="result">
+    <h3 id="rtitle">결과</h3>
+    <div class="topics" id="topics"></div>
+    <p class="note" id="wronglist"></p>
+    <textarea id="summary" readonly aria-label="Claude에게 보낼 결과 요약"></textarea>
+    <div class="row">
+      <button class="act" id="copy" type="button">결과 복사</button>
+      <button class="act ghost" id="reset" type="button">처음부터 다시</button>
+    </div>
+    <p class="note" id="copymsg"></p>
+  </section>
+</div>
+
+<script>
+const Q=[
+{t:"Lynch",type:"mc",s:"A sign or a single tree that people use as a point of reference is a(n):",o:["Node","Landmark","District","Edge"],a:1,e:"바라보는 점 = Landmark. 크기와 무관 (sign, tree, store front)."},
+{t:"Lynch",type:"mc",s:"An enclosed square where several paths cross and people gather is a(n):",o:["Landmark","Edge","Node","District"],a:2,e:"들어가는 점 = Node (junction, convergence of paths, enclosed square)."},
+{t:"Lynch",type:"mc",s:"A historic neighborhood with a common character that people feel they are \"inside of\" is a(n):",o:["District","Node","Path","Landmark"],a:0,e:"2D extent + inside of + common character = District."},
+{t:"Lynch",type:"tf",s:"Landmarks are point-references considered to be external to the observer.",a:true,e:"슬라이드 정의 그대로. 들어가면 Node, 밖에서 보면 Landmark."},
+{t:"Lynch",type:"tf",s:"Edges are linear elements that the observer uses as paths.",a:false,e:"Edges = linear elements NOT used or considered as paths (shores, walls)."},
+{t:"인물",type:"mc",s:"Proxemics and The Hidden Dimension (1966):",o:["James J. Gibson","Edward T. Hall","Jan Gehl","Kevin Lynch"],a:1,e:"Hall = 복도(hall)에서의 거리 → Proxemics."},
+{t:"인물",type:"mc",s:"\"A possibility for action afforded to a perceiver by an object\" — the theory of affordances is by:",o:["Jan Gehl","James J. Gibson","Jane Jacobs","Edward T. Hall"],a:1,e:"Gibson Gives (1977). Gehl은 사람(Cities for People)."},
+{t:"인물",type:"mc",s:"Legibility and the five elements of the city image:",o:["Kevin Lynch","Le Corbusier","Jan Gehl","Robert Sommer"],a:0,e:"L 세 개: Lynch · Legibility · Landmark. The Image of the City (1960)."},
+{t:"인물",type:"mc",s:"Cities for People (2010), the edge effect and three types of outdoor activities:",o:["Kevin Lynch","James J. Gibson","Jan Gehl","Edward T. Hall"],a:2,e:"Gehl = Good for people."},
+{t:"인물",type:"mc",s:"The Death and Life of Great American Cities:",o:["Edward T. Hall","Jan Gehl","Kevin Lynch","Jane Jacobs"],a:3,e:"Jane's streets: \"If a city's streets look interesting, the city looks interesting.\""},
+{t:"수치",type:"mc",s:"At about 100 m, we can:",o:["See people in motion","Read facial expressions","Use all of our senses","Hold a personal conversation"],a:0,e:"100 m = 움직임 · 25 m = 표정 · 7.5 m = 모든 감각."},
+{t:"수치",type:"mc",s:"We can start decoding emotions and facial expressions at about:",o:["100 m","50 m","25 m","3.6 m"],a:2,e:"25 m."},
+{t:"수치",type:"mc",s:"Hall's personal distance ranges from:",o:["0–0.5 m","0.5–1.2 m","1.2–3.6 m","Over 3.6 m"],a:1,e:"Intimate 0–0.5 · Personal 0.5–1.2 · Social 1.2–3.6 · Public >3.6."},
+{t:"4주차",type:"mc",s:"The key aspects of \"Make Connections\" are:",o:["Diversity","Ease of movement and Legibility","Adaptability","Sustainable land value"],a:1,e:"연결되어야 길을 찾는다 → Ease of movement + Legibility."},
+{t:"4주차",type:"mc",s:"The key aspect of \"Manage the Investment\" is:",o:["Sustainable land value","Character, history, storytelling","Quality of the public space","Climate, landform, ecology"],a:0,e:"투자 → 땅값 (Sustainable land value)."},
+{t:"4주차",type:"mc",s:"The key aspect of \"Mix Uses and Forms\" is:",o:["Adaptability","Legibility","Diversity","Continuity and enclosure"],a:2,e:"Mix → Diversity (variety and choice)."},
+{t:"7주차",type:"tf",s:"Private entrances to ground floor residential units should be flush with the public sidewalk.",a:false,e:"Flush는 공공 출입구. 주거 = 높이 차 ≤0.9 m, 이격 ≥3 m."},
+{t:"7주차",type:"mc",s:"Private residential entrances should have grade separation of up to:",o:["0.3 m","0.9 m","1.5 m","3.0 m"],a:1,e:"0.9 m (높이) / 3 m (거리)."},
+{t:"7주차",type:"mc",s:"A forecourt is landscaped open space located:",o:["In the centre of a block with no street frontage","Between the public sidewalk and the main entrance","Through the block as a pedestrian route","On the roof of a building"],a:1,e:"fore = 앞 → 입구 앞마당. 블록 중앙 = Courtyard. 블록 관통 = Walkway."},
+{t:"7주차",type:"mc",s:"\"Large units, few or no doors, no visible variation, uniform facades, nothing to look at\" is:",o:["Active","Mixture","Boring","Inactive"],a:3,e:"문이 거의/전혀 없음 + 볼 것 없음 = Inactive."},
+{t:"7주차",type:"mc",s:"\"Large units, few doors, almost no variation in function, many blind units\" is:",o:["Mixture","Boring","Inactive","Active"],a:1,e:"few doors = Boring. 순서: Active → Mixture → Boring → Inactive (문이 줄어듦)."},
+{t:"7주차",type:"tf",s:"Transit shelters should use transparent materials and be located between store entrances or shop windows.",a:true,e:"투명 = 시야 확보·안전. 점포 입구 사이에 배치."},
+{t:"2주차",type:"tf",s:"Necessary activities take place only when the weather is good.",a:false,e:"Necessary = 모든 조건에서 발생."},
+{t:"2주차",type:"tf",s:"Optional activities depend on good city quality.",a:true,e:"Good city quality is a prerequisite for optional activities."}
+];
+
+const KEY="ald-quiz2b-v1";
+let ans={};
+try{ans=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){ans={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(ans))}catch(e){}};
+
+const quiz=document.getElementById("quiz");
+let lastTopic=null;
+Q.forEach((q,i)=>{
+  if(q.t!==lastTopic){const h=document.createElement("h2");h.textContent=q.t;quiz.appendChild(h);lastTopic=q.t}
+  const c=document.createElement("div");c.className="q";c.id="q"+(i+1);
+  c.innerHTML=`<span class="n">#${i+1}${q.type==="tf"?" · T/F":""}</span><p class="stem"></p>`;
+  c.querySelector(".stem").textContent=q.s;
+  const box=document.createElement("div");
+  if(q.type==="self"){
+    const show=document.createElement("button");show.className="act ghost";show.type="button";show.textContent="모범 뼈대 보기";
+    box.appendChild(show);
+    show.onclick=()=>{ans[i]=ans[i]??"shown";save();render(i)};
+  }else{
+    box.className="opts"+(q.type==="tf"?" tf":"");
+    const opts=q.type==="tf"?["True","False"]:q.o;
+    opts.forEach((txt,k)=>{
+      const b=document.createElement("button");b.className="o";b.type="button";b.textContent=txt;
+      b.onclick=()=>{if(ans[i]!==undefined)return;ans[i]=k;save();render(i)};
+      box.appendChild(b);
+    });
+  }
+  c.appendChild(box);
+  const ex=document.createElement("div");ex.className="fb";c.appendChild(ex);
+  quiz.appendChild(c);
+});
+
+function correctIdx(q){return q.type==="tf"?(q.a?0:1):q.a}
+function isRight(i){const q=Q[i],v=ans[i];if(v===undefined)return null;if(q.type==="self")return v==="y"?true:v==="n"?false:null;return v===correctIdx(q)}
+
+function render(i){
+  const q=Q[i],c=document.getElementById("q"+(i+1)),fb=c.querySelector(".fb"),v=ans[i];
+  fb.innerHTML="";
+  if(q.type==="self"){
+    if(v===undefined)return;
+    c.querySelector("button.act").hidden=true;
+    const m=document.createElement("div");m.className="model";m.textContent=q.m;fb.appendChild(m);
+    const row=document.createElement("div");row.className="row";
+    [["y","뼈대 5칸 거의 다 맞음"],["n","절반 이상 빠짐"]].forEach(([k,l])=>{
+      const b=document.createElement("button");b.type="button";b.className="o"+(v===k?(k==="y"?" right":" wrong"):"");b.textContent=l;
+      b.onclick=()=>{ans[i]=k;save();render(i)};row.appendChild(b)});
+    fb.appendChild(row);
+  }else{
+    const bs=c.querySelectorAll("button.o"),ci=correctIdx(q);
+    bs.forEach((b,k)=>{b.classList.remove("right","wrong");if(v!==undefined){b.disabled=true;if(k===ci)b.classList.add("right");else if(k===v)b.classList.add("wrong")}});
+    if(v!==undefined){const ok=v===ci;const e=document.createElement("div");e.className="exp";
+      e.innerHTML=`<b class="${ok?"ok":"bad"}">${ok?"정답":"오답"}</b> · `;e.appendChild(document.createTextNode(q.e));fb.appendChild(e)}
+  }
+  update();
+}
+
+function update(){
+  let done=0,right=0;const per={};
+  Q.forEach((q,i)=>{const r=isRight(i);per[q.t]=per[q.t]||{r:0,n:0};per[q.t].n++;if(r!==null){done++;if(r){right++;per[q.t].r++}}});
+  document.getElementById("score").textContent=`${right} / ${done} 맞음 · ${Q.length-done}문항 남음`;
+  document.getElementById("progbar").style.width=(done/Q.length*100)+"%";
+  document.getElementById("rtitle").textContent=done===Q.length?`결과: ${right} / ${Q.length}`:`결과 (진행 중: ${done} / ${Q.length})`;
+  const tp=document.getElementById("topics");tp.innerHTML="";
+  Object.entries(per).forEach(([k,o])=>{const d=document.createElement("div");d.className="t";
+    d.innerHTML=`<span></span><span class="track"><i style="width:${o.r/o.n*100}%"></i></span><span class="v">${o.r}/${o.n}</span>`;
+    d.firstChild.textContent=k;tp.appendChild(d)});
+  const wrong=Q.map((q,i)=>isRight(i)===false?i+1:null).filter(Boolean);
+  document.getElementById("wronglist").textContent=wrong.length?`틀린 문항: #${wrong.join(", #")}`:"";
+  const left=Q.map((q,i)=>isRight(i)===null?i+1:null).filter(Boolean);
+  document.getElementById("summary").value=`재도전 결과 ${right}/${Q.length}\n`+Object.entries(per).map(([k,o])=>`${k} ${o.r}/${o.n}`).join(" | ")+
+    `\n틀린 문항: ${wrong.length?wrong.map(n=>"#"+n+"("+Q[n-1].t+")").join(", "):"없음"}`+(left.length?`\n미응답: #${left.join(", #")}`:"");
+}
+
+document.getElementById("copy").onclick=()=>{
+  const t=document.getElementById("summary"),msg=document.getElementById("copymsg");
+  const fallback=()=>{t.focus();t.select();msg.textContent="자동 복사가 안 돼서 결과를 선택해 두었어요. 길게 눌러 복사하세요."};
+  try{navigator.clipboard.writeText(t.value).then(()=>{msg.textContent="복사했어요. Claude 대화창에 붙여넣어 보내 주세요."},fallback)}catch(e){fallback()}
+};
+let armed=false;
+document.getElementById("reset").onclick=(ev)=>{
+  if(!armed){armed=true;ev.target.textContent="정말 지울까요? 한 번 더 누르기";setTimeout(()=>{armed=false;ev.target.textContent="처음부터 다시"},3000);return}
+  ans={};save();location.reload();
+};
+Q.forEach((q,i)=>render(i));update();
+</script>
