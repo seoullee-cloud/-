@@ -1,0 +1,212 @@
+<title>ALD 2차 점검</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: single study column, sticky score bar on top, tap-to-answer cards grouped by topic */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --fg:#1b2428; --muted:#5d6b72; --line:#d5dde0;
+  --accent:#1f6f78; --accent-soft:#e1eff0;
+  --ok:#237a45; --ok-soft:#e3f3e8; --bad:#b23a3a; --bad-soft:#f8e4e4;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181b; --surface:#1a2226; --fg:#e4ebed; --muted:#93a3a9; --line:#2c383d;
+  --accent:#5fb7bf; --accent-soft:#1d3336; --ok:#6cc68d; --ok-soft:#1b3125; --bad:#ef8a8a; --bad-soft:#3a2224; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181b; --surface:#1a2226; --fg:#e4ebed; --muted:#93a3a9; --line:#2c383d;
+  --accent:#5fb7bf; --accent-soft:#1d3336; --ok:#6cc68d; --ok-soft:#1b3125; --bad:#ef8a8a; --bad-soft:#3a2224; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px}
+.bar-in{max-width:720px;margin:0 auto;padding-inline:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar h1{font-size:16px;margin:0;font-weight:700}
+.score{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;color:var(--muted);margin-left:auto}
+.prog{flex-basis:100%;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.intro{color:var(--muted);font-size:14px;margin:14px 0 4px}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:28px 0 8px;font-weight:700}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px}
+.q .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.q p.stem{margin:2px 0 10px;font-weight:500}
+.opts{display:grid;gap:6px}
+.opts.tf{grid-template-columns:1fr 1fr}
+button.o{font:inherit;text-align:left;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;min-height:44px}
+button.o:hover:not(:disabled){border-color:var(--accent)}
+button.o:focus-visible,button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.o:disabled{cursor:default}
+button.o.right{background:var(--ok-soft);border-color:var(--ok);color:var(--fg)}
+button.o.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--fg)}
+.tf button.o{text-align:center;font-weight:700}
+.exp{margin-top:10px;font-size:14px;padding:8px 10px;border-radius:6px;background:var(--accent-soft)}
+.exp b.ok{color:var(--ok)} .exp b.bad{color:var(--bad)}
+.model{white-space:pre-wrap;font-size:13.5px;background:var(--bg);border:1px dashed var(--line);border-radius:6px;padding:10px;margin-top:8px;overflow-x:auto}
+button.act{font:inherit;font-weight:700;padding:10px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer;min-height:44px}
+button.act.ghost{background:transparent;color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#result{background:var(--surface);border:2px solid var(--accent);border-radius:8px;padding:16px;margin-top:28px}
+#result h3{margin:0 0 8px;font-size:18px}
+.topics{display:grid;gap:6px;margin:10px 0}
+.t{display:grid;grid-template-columns:7.5em 1fr 3.5em;gap:8px;align-items:center;font-size:14px}
+.t .track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.t .track i{display:block;height:100%;background:var(--accent)}
+.t .v{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:12.5px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px}
+.note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.prog i{transition:none}}
+</style>
+
+<header class="bar"><div class="bar-in">
+  <h1>건축과경관디자인 · 2차 점검</h1>
+  <span class="score" id="score">0 / 0 맞음 · 0문항 남음</span>
+  <div class="prog"><i id="progbar"></i></div>
+</div></header>
+
+<div class="wrap">
+  <p class="intro">보기를 누르면 바로 채점되고 해설이 나옵니다. 서술형 뼈대는 종이에 먼저 써 본 뒤 "모범 뼈대 보기"를 누르고 스스로 채점하세요. 다 풀면 맨 아래 결과를 복사해서 Claude에게 보내 주세요.</p>
+  <div id="quiz"></div>
+  <section id="result">
+    <h3 id="rtitle">결과</h3>
+    <div class="topics" id="topics"></div>
+    <p class="note" id="wronglist"></p>
+    <textarea id="summary" readonly aria-label="Claude에게 보낼 결과 요약"></textarea>
+    <div class="row">
+      <button class="act" id="copy" type="button">결과 복사</button>
+      <button class="act ghost" id="reset" type="button">처음부터 다시</button>
+    </div>
+    <p class="note" id="copymsg"></p>
+  </section>
+</div>
+
+<script>
+const Q=[
+// Lynch
+{t:"Lynch",type:"mc",s:"A store front visible from a certain approach is best classified as a(n):",o:["Path","Edge","Node","Landmark"],a:3,e:"작아도 '밖에서 바라보는 기준점'이면 Landmark. 1차·중간점검에서 Edge와 헷갈렸던 문제."},
+{t:"Lynch",type:"mc",s:"A city wall or a shoreline that separates two areas is a(n):",o:["District","Edge","Path","Node"],a:1,e:"선으로 나누거나 막는 것은 Edge (barrier 또는 seam). District는 들어가는 '면'."},
+{t:"Lynch",type:"mc",s:"Which element does the observer mentally enter \"inside of\", with two-dimensional extent?",o:["Node","Landmark","District","Path"],a:2,e:"2차원 면 + 공통 성격 = District (historic district, housing complex)."},
+{t:"Lynch",type:"tf",s:"Nodes can simply be concentrations of some use or physical character, such as a street-corner hangout.",a:true,e:"Node = junction(교차) 또는 concentration(집중). street-corner hangout, enclosed square."},
+{t:"Lynch",type:"tf",s:"Landmarks must be large in scale, such as towers or high-rise buildings.",a:false,e:"Landmarks may vary widely in scale: sign, tree, store front도 Landmark."},
+{t:"Lynch",type:"mc",s:"Which is NOT one of the three components of an environmental image?",o:["Identity","Structure","Meaning","Legibility"],a:3,e:"3요소 = Identity · Structure · Meaning. Legibility는 도시 이미지의 '명료성' 개념."},
+// Survey
+{t:"3주차 조사",type:"mc",s:"Following a randomly selected pedestrian with a stop-watch to measure walking speed is:",o:["Tracing","Tracking","Mapping","Test walk"],a:1,e:"Tracking(Shadowing) = 따라가며 시간 측정. Tracing = 이동선 그리기."},
+{t:"3주차 조사",type:"mc",s:"Which information generally requires a questionnaire rather than observation?",o:["Gender","Age","Job or economic situation","Where people stay"],a:2,e:"성별·나이는 관찰 가능, 직업·경제상황은 설문 필요."},
+{t:"3주차 조사",type:"tf",s:"The analysis diagram uses lines, arrows and shapes to show major forces such as flows, views and conflicts.",a:true,e:"Analysis diagram = 이용 패턴·감각 요소. Existing conditions diagram = 물리적 요소 + scale, north arrow, legend."},
+// 4주차
+{t:"4주차",type:"mc",s:"\"Adaptability\" is the key aspect of which principle?",o:["Mix Uses and Forms","Design for Change","Manage the Investment","Enrich the Existing"],a:1,e:"Design for Change ↔ Adaptability (Hammarby Sjöstad, Greenwich Millennium Village)."},
+{t:"4주차",type:"mc",s:"\"Sustainable land value\" belongs to which principle?",o:["Manage the Investment","Work with the Landscape","Places for People","Make Connections"],a:0,e:"Manage the Investment ↔ Sustainable land value."},
+{t:"4주차",type:"mc",s:"\"Ease of movement\" and \"Legibility\" belong to which principle?",o:["Places for People","Mix Uses and Forms","Make Connections","Design for Change"],a:2,e:"Make Connections ↔ Ease of movement + Legibility."},
+{t:"4주차",type:"mc",s:"A formal, usually hard-paved public space located at a focal point of civic importance is a:",o:["Plaza","Square","Greenway","Forecourt"],a:1,e:"Square = civic, formal, hard paved, passive recreation."},
+{t:"4주차",type:"mc",s:"A public space associated with commercial (office/retail) buildings, usually with formal landscaping, is a:",o:["Square","Playground","Plaza","Playing field"],a:2,e:"Plaza = 상업 건물에 딸린 공간. Square와 바꿔 내는 함정 주의."},
+{t:"4주차",type:"tf",s:"A cul-de-sac layout helps a development integrate with its surroundings.",a:false,e:"Cul-de-sac = introverted layout, fails to integrate. 기존·신규 가로를 잇는 것이 pedestrian-friendly."},
+{t:"4주차",type:"mc",s:"Which was NOT a feature of Le Corbusier's Contemporary City (1922)?",o:["Monumental axes","85–95% open space","Highway traffic system","Narrow mixed-use streets with active frontage"],a:3,e:"좁은 복합용도 가로·활기찬 저층부는 Gehl이 말하는 대안. 모더니즘은 그 반대."},
+{t:"4주차",type:"tf",s:"Gehl argues that Modernism put a low priority on public space, pedestrianism and the city as a meeting place.",a:true,e:"서술형 E3 핵심 문장."},
+{t:"4주차",type:"mc",s:"Which is NOT a reason urban structure is important?",o:["Integration","Functional efficiency","Commercial viability","Maximum traffic speed"],a:3,e:"5가지: Integration · Functional efficiency · Environmental harmony · A sense of place · Commercial viability."},
+// 7주차
+{t:"7주차",type:"mc",s:"The recommended minimum ground floor floor-to-floor height is:",o:["3.0 m","3.6 m","4.5 m","6.0 m"],a:2,e:"4.5 m — 하역(loading) 공간의 높이 확보."},
+{t:"7주차",type:"mc",s:"The most active commercial streets have about how many shops per 100 m?",o:["5–10","15–20","25–30","More than 40"],a:1,e:"입면 폭 5–6 m → 100 m당 15–20개 → 4–5초마다 새 경험."},
+{t:"7주차",type:"tf",s:"Private entrances to ground-floor residential units should have grade separation up to 0.9 m and at least 3 m distance from the front property line.",a:true,e:"주거 = 0.9 m / 3 m. 공공 출입구(상업, 공용 로비) = 보도와 flush."},
+{t:"7주차",type:"mc",s:"Landscaped open space between the public sidewalk and the main entrance of a building is a:",o:["Courtyard","Forecourt","Urban garden","Walkway"],a:1,e:"Forecourt = 보도와 주출입구 사이. Courtyard = 블록 중앙, 가로 접면 없음."},
+{t:"7주차",type:"mc",s:"\"Large units, few doors, almost no variation in function, many blind units, few or no details\" describes a ground floor that is:",o:["Active","Mixture","Boring","Inactive"],a:2,e:"Boring. Inactive는 '문이 거의 없거나 전혀 없음, 입면 균일, 볼 것 없음'."},
+{t:"7주차",type:"tf",s:"Transit shelters should use opaque materials to give waiting passengers privacy.",a:false,e:"투명한 재료(glass)로 시야 방해를 줄이고 안전성을 높인다. 점포 입구 사이에 배치."},
+// 수치·인물
+{t:"수치·인물",type:"mc",s:"Hall's social distance ranges from:",o:["0–0.5 m","0.5–1.2 m","1.2–3.6 m","Over 3.6 m"],a:2,e:"Intimate 0–0.5 · Personal 0.5–1.2 · Social 1.2–3.6 · Public >3.6."},
+{t:"수치·인물",type:"mc",s:"At about what distance can we start decoding facial expressions and emotions?",o:["100 m","25 m","7.5 m","3.6 m"],a:1,e:"100 m = 움직이는 사람 보임 · 25 m = 표정 · 7.5 m 이내 = 모든 감각."},
+{t:"수치·인물",type:"mc",s:"The theory of affordances was proposed by:",o:["Edward T. Hall","James J. Gibson","Kevin Lynch","Jan Gehl"],a:1,e:"Gibson (1977). 1차에서 Gehl로 썼던 문제."},
+{t:"수치·인물",type:"mc",s:"The Image of the City (1960) was written by:",o:["Jane Jacobs","Kevin Lynch","Jan Gehl","Robert Sommer"],a:1,e:"Kevin Lynch. 1차에서 Le Corbusier로 썼던 문제."},
+{t:"수치·인물",type:"mc",s:"\"If a city's streets look interesting, the city looks interesting\" is from The Death and Life of Great American Cities by:",o:["Jane Jacobs","Richard Rogers","Yoshinobu Ashihara","Le Corbusier"],a:0,e:"Jane Jacobs."},
+// 2·5주차
+{t:"2·5주차",type:"mc",s:"The three physical realms of a street are:",o:["Frontage / Walking / Edge","Private / Pedestrian / Roadway","Public / Semi-public / Private","Path / Edge / Node"],a:1,e:"Private · Pedestrian · Roadway. 첫 번째 보기는 보도(Pedestrian realm) 안의 구역."},
+{t:"2·5주차",type:"tf",s:"Optional activities take place only when outdoor conditions and city quality are good.",a:true,e:"Optional = 좋은 질이 전제. Necessary = 모든 조건에서 발생."},
+{t:"2·5주차",type:"mc",s:"Which is NOT one of the 5 C's of pedestrian-friendly streets?",o:["Connective","Convenient","Cheerful","Compact"],a:3,e:"Connective · Convenient · Cheerful · Comfortable · Clear."},
+// Essay skeletons
+{t:"서술형 뼈대",type:"self",s:"Lynch — legibility와 5요소. 종이에 뼈대 5칸(정의·출처·분류·예시·적용)을 먼저 쓰고 열어 보세요.",m:"① Legibility = apparent clarity of the cityscape; easily identified & grouped into an overall pattern\n② Kevin Lynch, The Image of the City (1960); image = Identity + Structure + Meaning (two-way)\n③ Paths / Edges / Districts / Nodes / Landmarks\n④ Boston image map & problems (characterless path, weak boundary, hidden waterfront)\n⑤ way-finding, security → clear routes, distinct districts, landmarks"},
+{t:"서술형 뼈대",type:"self",s:"Modernism 비판. 뼈대 5칸을 먼저 쓰고 열어 보세요.",m:"① Le Corbusier 1922: geometric plan, axes, uniform towers, 85–95% open space, highways\n② Modernism / Jan Gehl, Cities for People (2010)\n③ Towers in the Park, Chandigarh\n④ rejected city space → human scale forgotten → large cold spaces, few people → car-invaded\n⑤ Gehl: reinforce pedestrianism → lively / safe / sustainable / healthy"},
+{t:"서술형 뼈대",type:"self",s:"Active frontage. 뼈대 5칸을 먼저 쓰고 열어 보세요.",m:"① Active ground floor = interaction between building and public domain\n② Jan Gehl — Active / Mixture / Boring / Inactive\n③ small units, many doors, variation, no blind units ↔ large units, few doors, blind\n④ 5–6 m, 15–20 shops/100 m, 4–5 sec, 4.5 m floor height\n⑤ transparent glass, canopy/awning, spill-out space, sidewalk café, folding doors"}
+];
+
+const KEY="ald-quiz2-v1";
+let ans={};
+try{ans=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){ans={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(ans))}catch(e){}};
+
+const quiz=document.getElementById("quiz");
+let lastTopic=null;
+Q.forEach((q,i)=>{
+  if(q.t!==lastTopic){const h=document.createElement("h2");h.textContent=q.t;quiz.appendChild(h);lastTopic=q.t}
+  const c=document.createElement("div");c.className="q";c.id="q"+(i+1);
+  c.innerHTML=`<span class="n">#${i+1}${q.type==="tf"?" · T/F":""}</span><p class="stem"></p>`;
+  c.querySelector(".stem").textContent=q.s;
+  const box=document.createElement("div");
+  if(q.type==="self"){
+    const show=document.createElement("button");show.className="act ghost";show.type="button";show.textContent="모범 뼈대 보기";
+    box.appendChild(show);
+    show.onclick=()=>{ans[i]=ans[i]??"shown";save();render(i)};
+  }else{
+    box.className="opts"+(q.type==="tf"?" tf":"");
+    const opts=q.type==="tf"?["True","False"]:q.o;
+    opts.forEach((txt,k)=>{
+      const b=document.createElement("button");b.className="o";b.type="button";b.textContent=txt;
+      b.onclick=()=>{if(ans[i]!==undefined)return;ans[i]=k;save();render(i)};
+      box.appendChild(b);
+    });
+  }
+  c.appendChild(box);
+  const ex=document.createElement("div");ex.className="fb";c.appendChild(ex);
+  quiz.appendChild(c);
+});
+
+function correctIdx(q){return q.type==="tf"?(q.a?0:1):q.a}
+function isRight(i){const q=Q[i],v=ans[i];if(v===undefined)return null;if(q.type==="self")return v==="y"?true:v==="n"?false:null;return v===correctIdx(q)}
+
+function render(i){
+  const q=Q[i],c=document.getElementById("q"+(i+1)),fb=c.querySelector(".fb"),v=ans[i];
+  fb.innerHTML="";
+  if(q.type==="self"){
+    if(v===undefined)return;
+    c.querySelector("button.act").hidden=true;
+    const m=document.createElement("div");m.className="model";m.textContent=q.m;fb.appendChild(m);
+    const row=document.createElement("div");row.className="row";
+    [["y","뼈대 5칸 거의 다 맞음"],["n","절반 이상 빠짐"]].forEach(([k,l])=>{
+      const b=document.createElement("button");b.type="button";b.className="o"+(v===k?(k==="y"?" right":" wrong"):"");b.textContent=l;
+      b.onclick=()=>{ans[i]=k;save();render(i)};row.appendChild(b)});
+    fb.appendChild(row);
+  }else{
+    const bs=c.querySelectorAll("button.o"),ci=correctIdx(q);
+    bs.forEach((b,k)=>{b.classList.remove("right","wrong");if(v!==undefined){b.disabled=true;if(k===ci)b.classList.add("right");else if(k===v)b.classList.add("wrong")}});
+    if(v!==undefined){const ok=v===ci;const e=document.createElement("div");e.className="exp";
+      e.innerHTML=`<b class="${ok?"ok":"bad"}">${ok?"정답":"오답"}</b> · `;e.appendChild(document.createTextNode(q.e));fb.appendChild(e)}
+  }
+  update();
+}
+
+function update(){
+  let done=0,right=0;const per={};
+  Q.forEach((q,i)=>{const r=isRight(i);per[q.t]=per[q.t]||{r:0,n:0};per[q.t].n++;if(r!==null){done++;if(r){right++;per[q.t].r++}}});
+  document.getElementById("score").textContent=`${right} / ${done} 맞음 · ${Q.length-done}문항 남음`;
+  document.getElementById("progbar").style.width=(done/Q.length*100)+"%";
+  document.getElementById("rtitle").textContent=done===Q.length?`결과: ${right} / ${Q.length}`:`결과 (진행 중: ${done} / ${Q.length})`;
+  const tp=document.getElementById("topics");tp.innerHTML="";
+  Object.entries(per).forEach(([k,o])=>{const d=document.createElement("div");d.className="t";
+    d.innerHTML=`<span></span><span class="track"><i style="width:${o.r/o.n*100}%"></i></span><span class="v">${o.r}/${o.n}</span>`;
+    d.firstChild.textContent=k;tp.appendChild(d)});
+  const wrong=Q.map((q,i)=>isRight(i)===false?i+1:null).filter(Boolean);
+  document.getElementById("wronglist").textContent=wrong.length?`틀린 문항: #${wrong.join(", #")}`:"";
+  const left=Q.map((q,i)=>isRight(i)===null?i+1:null).filter(Boolean);
+  document.getElementById("summary").value=`2차 결과 ${right}/${Q.length}\n`+Object.entries(per).map(([k,o])=>`${k} ${o.r}/${o.n}`).join(" | ")+
+    `\n틀린 문항: ${wrong.length?wrong.map(n=>"#"+n+"("+Q[n-1].t+")").join(", "):"없음"}`+(left.length?`\n미응답: #${left.join(", #")}`:"");
+}
+
+document.getElementById("copy").onclick=()=>{
+  const t=document.getElementById("summary"),msg=document.getElementById("copymsg");
+  const fallback=()=>{t.focus();t.select();msg.textContent="자동 복사가 안 돼서 결과를 선택해 두었어요. 길게 눌러 복사하세요."};
+  try{navigator.clipboard.writeText(t.value).then(()=>{msg.textContent="복사했어요. Claude 대화창에 붙여넣어 보내 주세요."},fallback)}catch(e){fallback()}
+};
+let armed=false;
+document.getElementById("reset").onclick=(ev)=>{
+  if(!armed){armed=true;ev.target.textContent="정말 지울까요? 한 번 더 누르기";setTimeout(()=>{armed=false;ev.target.textContent="처음부터 다시"},3000);return}
+  ans={};save();location.reload();
+};
+Q.forEach((q,i)=>render(i));update();
+</script>
