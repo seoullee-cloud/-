@@ -6,10 +6,11 @@ from seg import units,hatch_polys
 RU=pickle.load(open('refunits.pkl','rb'))
 RW=pickle.load(open('refwalls.pkl','rb')); RU=pickle.load(open('refunits.pkl','rb'))
 S=0.25 # paper units per px (=50mm)
-MAP={'84':[9],'59':[7],'49':[3],'49 / R':[0],'49 / C':[4],'59 / R63':[1,5],'59 / R54':[8],'59 / La':[10],'59 / Lb':[11]}
+MAP={'84 분리형':[9],'84 분리형 S81':[9],'84':[9],'59':[7],'49':[3],'49 / R':[0],'49 / C':[4],'59 / R63':[1,5],'59 / R54':[8],'59 / La':[10],'59 / Lb':[11]}
 ORI=[(r,f) for f in (False,True) for r in (0,90,180,270)]
-def xf(g,r,f):
-    g=affinity.scale(g,1/200,1/200,origin=(0,0))
+SCALE_LABELS={'84 분리형','84 분리형 S81'}
+def xf(g,r,f,sx=1.0):
+    g=affinity.scale(g,sx/200,1/200,origin=(0,0))
     if f: g=affinity.scale(g,-1,1,origin=(0,0))
     return affinity.rotate(g,r,origin=(0,0))
 def rast(geom,x0,y0,W,H):
@@ -37,22 +38,24 @@ def match_file(fn):
         cands=[]
         for ri in MAP[lab]:
             best=None
-            for r,f in ORI:
-                g=xf(RW[ri],r,f); gx0,gy0,gx1,gy1=g.bounds
+            sxs=[round(1+0.005*k,3) for k in range(-12,13)] if lab in SCALE_LABELS else [1.0]
+            for sx in sxs:
+              for r,f in ORI:
+                g=xf(RW[ri],r,f,sx); gx0,gy0,gx1,gy1=g.bounds
                 tpl=rast(g,gx0,gy0,int((gx1-gx0)/S)+2,int((gy1-gy0)/S)+2)
                 if tpl.shape[0]>=H or tpl.shape[1]>=W: continue
                 sc=cv2.matchTemplate(timg,tpl,cv2.TM_CCORR_NORMED)
                 _,mx,_,loc=cv2.minMaxLoc(sc)
                 if best is None or mx>best[0]:
-                    best=(mx,ri,r,f,X0+loc[0]*S-gx0,Y0+loc[1]*S-gy0)
-            mx,_,r,f,tx,ty=best
+                    best=(mx,ri,r,f,X0+loc[0]*S-gx0,Y0+loc[1]*S-gy0,sx)
+            mx,_,r,f,tx,ty,sx=best
             cs_=0
             for pts,cl in RU[ri]['ents'].get('A-COLS',[]):
-                cp=affinity.translate(xf(Polygon(pts),r,f),tx,ty)
+                cp=affinity.translate(xf(Polygon(pts),r,f,sx),tx,ty)
                 cs_+=1 if cp.intersects(ts) else -1
             cands.append(((cs_,mx),best))
-        mx,ri,r,f,tx,ty=max(cands)[1]
-        res.append(dict(label=lab,poly=c,ref=ri,rot=r,flip=f,tx=tx,ty=ty,score=mx))
+        mx,ri,r,f,tx,ty,sx=max(cands)[1]
+        res.append(dict(label=lab,poly=c,ref=ri,rot=r,flip=f,tx=tx,ty=ty,score=mx,sx=sx))
     return m,res,tw
 if __name__=='__main__':
     out={}
@@ -62,5 +65,5 @@ if __name__=='__main__':
         print('==',fn.split('/')[-1])
         for d in res:
             if d['ref'] is None: print('   ',d['label'],'SKIP'); continue
-            print('   %-10s ref%-2d rot%3d flip%d score %.3f t=(%.2f,%.2f)'%(d['label'],d['ref'],d['rot'],d['flip'],d['score'],d['tx'],d['ty']))
+            print('   %-14s ref%-2d rot%3d flip%d sx%.3f score %.3f t=(%.2f,%.2f)'%(d['label'],d['ref'],d['rot'],d['flip'],d['sx'],d['score'],d['tx'],d['ty']))
     pickle.dump(out,open('match.pkl','wb'))
